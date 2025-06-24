@@ -11,7 +11,7 @@ public class LibraryService {
 
         List<Employee> employees = new ArrayList<>();
         employees.add(new Employee(1, "John Doe"));
-        employees.add(new Employee(2, "Alex True"));
+        employees.add(new Employee(2, "Alex Trueman"));
         employees.add(new Employee(3, "Steve Cool"));
 
         books.add(new Book(1, "Война и Мир", "Л.Н. Толстой"));
