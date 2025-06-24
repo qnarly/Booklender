@@ -5,12 +5,14 @@ import java.util.List;
 import java.util.Optional;
 
 public class LibraryService {
-    private List<Employee> employees = new ArrayList<>();
-    private List<Book> books = new ArrayList<>();
+    private final List<Book> books = new ArrayList<>();
 
     public LibraryService() {
+
+        List<Employee> employees = new ArrayList<>();
         employees.add(new Employee(1, "John Doe"));
         employees.add(new Employee(2, "Alex True"));
+        employees.add(new Employee(3, "Steve Cool"));
 
         books.add(new Book(1, "Война и Мир", "Л.Н. Толстой"));
         books.add(new Book(2, "Преступление и наказание", "Ф.М. Достоевский"));

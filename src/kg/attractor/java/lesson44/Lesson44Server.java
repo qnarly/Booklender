@@ -5,18 +5,30 @@ import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
 import freemarker.template.TemplateExceptionHandler;
+import kg.attractor.java.library.LibraryService;
 import kg.attractor.java.server.BasicServer;
 import kg.attractor.java.server.ContentType;
 import kg.attractor.java.server.ResponseCodes;
 
 import java.io.*;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class Lesson44Server extends BasicServer {
     private final static Configuration freemarker = initFreeMarker();
 
+    private final LibraryService libraryService = new LibraryService();
+
+
     public Lesson44Server(String host, int port) throws IOException {
         super(host, port);
         registerGet("/sample", this::freemarkerSampleHandler);
+        registerGet("/books", this::booksHandler);
+        registerGet("/book", this::bookHandler);
     }
 
     private static Configuration initFreeMarker() {
@@ -38,6 +50,53 @@ public class Lesson44Server extends BasicServer {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private void booksHandler(HttpExchange httpExchange) {
+        var books = libraryService.getBooks();
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("books", books);
+
+        renderTemplate(httpExchange, "books.ftlh", data);
+    }
+
+    private void bookHandler(HttpExchange exchange) {
+        String query = exchange.getRequestURI().getQuery();
+        Map<String, String> params = queryToMap(query);
+
+        String idParam = params.get("id");
+
+        java.util.Optional<kg.attractor.java.library.Book> bookOpt;
+
+        if (idParam != null) {
+            try {
+                int bookId = Integer.parseInt(idParam);
+                bookOpt = libraryService.getBookById(bookId);
+            } catch (NumberFormatException e) {
+                bookOpt = java.util.Optional.empty();
+            }
+        } else {
+            bookOpt = libraryService.getBooks().stream().findFirst();
+        }
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("book", bookOpt.orElse(null));
+
+        renderTemplate(exchange, "book.ftlh", data);
+    }
+
+    public static Map<String, String> queryToMap(String query) {
+        if (query == null) {
+            return Map.of();
+        }
+        return java.util.Arrays.stream(query.split("&"))
+                .map(s -> s.split("=", 2))
+                .collect(Collectors.toMap(
+                        a -> URLDecoder.decode(a[0], StandardCharsets.UTF_8),
+                        a -> a.length > 1 ? URLDecoder.decode(a[1], StandardCharsets.UTF_8) : "",
+                        (v1, v2) -> v1
+                ));
     }
 
     private void freemarkerSampleHandler(HttpExchange exchange) {
