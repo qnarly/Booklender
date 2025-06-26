@@ -9,10 +9,12 @@ import kg.attractor.java.library.LibraryService;
 import kg.attractor.java.server.BasicServer;
 import kg.attractor.java.server.ContentType;
 import kg.attractor.java.server.ResponseCodes;
+import kg.attractor.java.utils.Utils;
 
 import java.io.*;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -29,6 +31,8 @@ public class Lesson44Server extends BasicServer {
         registerGet("/sample", this::freemarkerSampleHandler);
         registerGet("/books", this::booksHandler);
         registerGet("/book", this::bookHandler);
+        registerGet("/login", this::loginGet);
+        registerPost("/login", this::loginPost);
     }
 
     private static Configuration initFreeMarker() {
@@ -50,6 +54,31 @@ public class Lesson44Server extends BasicServer {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private void loginPost(HttpExchange exchange) {
+        String cType = getContentType(exchange);
+        String raw = getBody(exchange);
+
+        Map<String, String> parsed = Utils.parseUrlEncoded(raw, "&");
+
+        String fmt = "<p>Необработанные данные: <b>%s</b></p>" +
+                "<p>Content-Type: <b>%s</b></p>" +
+                "<p>После обработки: <b>%s</b></p>";
+        String data = String.format(fmt, raw, cType, parsed);
+
+        try{
+            sendByteData(exchange, ResponseCodes.OK, ContentType.TEXT_HTML, data.getBytes());
+        } catch (IOException e){
+            e.printStackTrace();
+        }
+
+//        redirect303(exchange, "/");
+    }
+
+    private void loginGet(HttpExchange exchange) {
+        Path path = makeFilePath("login.ftlh");
+        sendFile(exchange, path, ContentType.TEXT_HTML);
     }
 
     private void booksHandler(HttpExchange httpExchange) {
