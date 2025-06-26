@@ -10,9 +10,9 @@ public class LibraryService {
     public LibraryService() {
 
         List<User> users = new ArrayList<>();
-        users.add(new User(1, "John Doe"));
-        users.add(new User(2, "Alex Trueman"));
-        users.add(new User(3, "Steve Cool"));
+        users.add(new User( "John Doe"));
+        users.add(new User( "Alex Trueman"));
+        users.add(new User( "Steve Cool"));
 
         books.add(new Book(1, "Война и Мир", "Л.Н. Толстой"));
         books.add(new Book(2, "Преступление и наказание", "Ф.М. Достоевский"));

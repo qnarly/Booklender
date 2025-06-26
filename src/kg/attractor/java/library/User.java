@@ -1,18 +1,15 @@
 package kg.attractor.java.library;
 
 public class User {
-    private int id;
     private String name;
     private String email;
     private String password;
 
-    public User(int id, String name) {
-        this.id = id;
+    public User(String name) {
         this.name = name;
     }
 
-    public User(int id, String name, String email, String password) {
-        this.id = id;
+    public User(String name, String email, String password) {
         this.name = name;
         this.email = email;
         this.password = password;
@@ -20,10 +17,6 @@ public class User {
 
     public String getName() {
         return name;
-    }
-
-    public int getId() {
-        return id;
     }
 
     public String getEmail() {
