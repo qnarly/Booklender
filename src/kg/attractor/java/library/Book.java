@@ -4,7 +4,7 @@ public class Book {
     private int id;
     private String title;
     private String author;
-    private Employee isTaken;
+    private User isTaken;
 
     public Book(int id, String title, String author) {
         this.id = id;
@@ -13,7 +13,7 @@ public class Book {
         this.isTaken = null;
     }
 
-    public void setIsTaken(Employee isTaken) {
+    public void setIsTaken(User isTaken) {
         this.isTaken = isTaken;
     }
 
@@ -29,7 +29,7 @@ public class Book {
         return author;
     }
 
-    public Employee getIsTaken() {
+    public User getIsTaken() {
         return isTaken;
     }
 }

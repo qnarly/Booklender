@@ -17,11 +17,11 @@
                 </div>
                 <div class="form-element">
                     <label for="user-email">email</label>
-                    <input type="email" name="email" id="user-email" placeholder="your email" required autofocus>
+                    <input type="email" name="email" id="user-email" placeholder="E-mail" required autofocus>
                 </div>
                 <div class="form-element">
                     <label for="user-password">password</label>
-                    <input type="password" name="user-password" id="user-password" placeholder="your password" required>
+                    <input type="password" name="user-password" id="user-password" placeholder="Password" required>
                 </div>
                 <div class="hr-line">
                     <span class="details">one more step to go</span>

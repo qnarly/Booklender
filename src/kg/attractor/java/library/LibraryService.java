@@ -9,17 +9,17 @@ public class LibraryService {
 
     public LibraryService() {
 
-        List<Employee> employees = new ArrayList<>();
-        employees.add(new Employee(1, "John Doe"));
-        employees.add(new Employee(2, "Alex Trueman"));
-        employees.add(new Employee(3, "Steve Cool"));
+        List<User> users = new ArrayList<>();
+        users.add(new User(1, "John Doe"));
+        users.add(new User(2, "Alex Trueman"));
+        users.add(new User(3, "Steve Cool"));
 
         books.add(new Book(1, "Война и Мир", "Л.Н. Толстой"));
         books.add(new Book(2, "Преступление и наказание", "Ф.М. Достоевский"));
         books.add(new Book(3, "Мастер и Маргарита", "М.А. Булгаков"));
         books.add(new Book(4, "Мартин Иден", "Джек Лондон"));
 
-        books.get(2).setIsTaken(employees.get(1));
+        books.get(2).setIsTaken(users.get(1));
     }
 
     public List<Book> getBooks() {
