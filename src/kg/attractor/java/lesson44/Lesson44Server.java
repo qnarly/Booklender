@@ -18,6 +18,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -40,7 +41,7 @@ public class Lesson44Server extends BasicServer {
 
     private void regGet(HttpExchange exchange) {
         Path path = makeFilePath("register.ftlh");
-        sendFile(exchange, path, ContentType.TEXT_HTML);
+        renderTemplate(exchange, "register.ftlh", null);
     }
 
     private void regPost(HttpExchange exchange) {
@@ -49,11 +50,23 @@ public class Lesson44Server extends BasicServer {
         String name = parsed.get("nickname");
         String email = parsed.get("email");
         String password = parsed.get("user-password");
-        User user = new User(name, email, password);
 
-        FileUtil.writeFile(user);
+        boolean userExist = isUserExist(email);
 
-        redirect303(exchange, "/");
+        if (userExist) {
+            System.out.println("Попытка регистрации с существующим email: " + email);
+            Map<String, Object> data = new HashMap<>();
+            data.put("message", "Пользователь с таким email уже зарегистрирован!");
+
+            renderTemplate(exchange, "register.ftlh", data);
+
+        } else {
+            User user = new User(name, email, password);
+            FileUtil.writeFile(user);
+
+            redirect303(exchange, "/");
+        }
+
 
     }
 
@@ -80,6 +93,13 @@ public class Lesson44Server extends BasicServer {
         }
 
 //        redirect303(exchange, "/");
+    }
+
+    private static boolean isUserExist(String email) {
+        List<User> users = FileUtil.readFile();
+
+        return users.stream()
+                .anyMatch(user -> user.getEmail().equalsIgnoreCase(email));
     }
 
     private static Configuration initFreeMarker() {

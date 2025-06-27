@@ -35,6 +35,14 @@
             </div>
         </fieldset>
     </form>
+    <#if message??>
+        <div style="color: red; text-align: center; margin-top: 20px;">
+            <p>
+                ${message}
+            </p>
+        </div>
+
+    </#if>
 </main>
 </body>
 
