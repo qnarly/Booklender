@@ -10,7 +10,7 @@ import kg.attractor.java.server.BasicServer;
 import kg.attractor.java.server.ContentType;
 import kg.attractor.java.server.ResponseCodes;
 import kg.attractor.java.user.User;
-import kg.attractor.java.utils.FileUtil;
+import kg.attractor.java.user.UserService;
 import kg.attractor.java.utils.Utils;
 
 import java.io.*;
@@ -18,7 +18,6 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -27,6 +26,8 @@ public class Booklender extends BasicServer {
     private final static Configuration freemarker = initFreeMarker();
 
     private final LibraryService libraryService = new LibraryService();
+
+    private final UserService userService = new UserService();
 
 
     public Booklender(String host, int port) throws IOException {
@@ -63,7 +64,7 @@ public class Booklender extends BasicServer {
         String email = parsed.get("email");
         String password = parsed.get("user-password");
 
-        boolean userExist = isUserExist(email);
+        boolean userExist = userService.isUserExist(email);
 
         if (userExist) {
             System.out.println("Попытка регистрации с существующим email: " + email);
@@ -74,7 +75,7 @@ public class Booklender extends BasicServer {
 
         } else {
             User user = new User(name, email, password);
-            FileUtil.writeFile(user);
+            userService.addUser(user);
 
             renderTemplate(exchange, "register_success.ftlh", null);
         }
@@ -93,7 +94,7 @@ public class Booklender extends BasicServer {
         String password = parsed.get("user-password");
 
 
-        Optional<User> userLogin = loginChecker(email);
+        Optional<User> userLogin = userService.loginChecker(email);
 
         if (userLogin.isPresent() && userLogin.get().getPassword().equals(password)) {
             System.out.println("Успешный вход для пользователя: " + email);
@@ -112,19 +113,6 @@ public class Booklender extends BasicServer {
         }
     }
 
-    private Optional<User> loginChecker(String email) {
-        return FileUtil.readFile().stream()
-                .filter(user -> user.getEmail().equalsIgnoreCase(email))
-                .findFirst();
-    }
-
-
-    private static boolean isUserExist(String email) {
-        List<User> users = FileUtil.readFile();
-
-        return users.stream()
-                .anyMatch(user -> user.getEmail().equalsIgnoreCase(email));
-    }
 
     private static Configuration initFreeMarker() {
         try {
