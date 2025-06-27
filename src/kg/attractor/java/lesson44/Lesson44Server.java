@@ -20,6 +20,7 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class Lesson44Server extends BasicServer {
@@ -67,33 +68,45 @@ public class Lesson44Server extends BasicServer {
             redirect303(exchange, "/");
         }
 
-
     }
 
     private void loginGet(HttpExchange exchange) {
         Path path = makeFilePath("login.ftlh");
-        sendFile(exchange, path, ContentType.TEXT_HTML);
+        renderTemplate(exchange, "login.ftlh", null);
     }
 
     private void loginPost(HttpExchange exchange) {
-        String cType = getContentType(exchange);
         String raw = getBody(exchange);
-
         Map<String, String> parsed = Utils.parseUrlEncoded(raw, "&");
+        String email = parsed.get("email");
+        String password = parsed.get("user-password");
 
-        String fmt = "<p>Необработанные данные: <b>%s</b></p>" +
-                "<p>Content-Type: <b>%s</b></p>" +
-                "<p>После обработки: <b>%s</b></p>";
-        String data = String.format(fmt, raw, cType, parsed);
 
-        try {
-            sendByteData(exchange, ResponseCodes.OK, ContentType.TEXT_HTML, data.getBytes());
-        } catch (IOException e) {
-            e.printStackTrace();
+        Optional<User> userLogin = loginChecker(email);
+
+        if (userLogin.isPresent() && userLogin.get().getPassword().equals(password)) {
+            System.out.println("Успешный вход для пользователя: " + email);
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("user", userLogin.get());
+
+            renderTemplate(exchange, "profile.ftlh", data);
+        } else {
+            System.out.println("Неудачная попытка входа для: " + email);
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("message", "Авторизоваться не удалось, неверный идентификатор или пароль");
+
+            renderTemplate(exchange, "login.ftlh", data);
         }
-
-//        redirect303(exchange, "/");
     }
+
+    private Optional<User> loginChecker(String email) {
+        return FileUtil.readFile().stream()
+                .filter(user -> user.getEmail().equalsIgnoreCase(email))
+                .findFirst();
+    }
+
 
     private static boolean isUserExist(String email) {
         List<User> users = FileUtil.readFile();

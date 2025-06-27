@@ -8,30 +8,38 @@
 </head>
 
 <body>
-    <main>
-        <form action="/login" method="post">
-            <fieldset>
-                <div class="legend">
-                    <p>Welcome!</p>
-                    <img src="/images/1.jpg" alt="coins" style="display:block; width: 200px; height: 200px;">
-                </div>
-                <div class="form-element">
-                    <label for="user-email">email</label>
-                    <input type="email" name="email" id="user-email" placeholder="E-mail" required autofocus>
-                </div>
-                <div class="form-element">
-                    <label for="user-password">password</label>
-                    <input type="password" name="user-password" id="user-password" placeholder="Password" required>
-                </div>
-                <div class="hr-line">
-                    <span class="details">one more step to go</span>
-                </div>
-                <div class="form-element">
-                    <button class="register-button" type="submit">Login!</button>
-                </div>
-            </fieldset>
-        </form>
-    </main>
+<main>
+    <form action="/login" method="post">
+        <fieldset>
+            <div class="legend">
+                <p>Welcome!</p>
+                <img src="/images/1.jpg" alt="coins" style="display:block; width: 200px; height: 200px;">
+            </div>
+            <div class="form-element">
+                <label for="user-email">email</label>
+                <input type="email" name="email" id="user-email" placeholder="E-mail" required autofocus>
+            </div>
+            <div class="form-element">
+                <label for="user-password">password</label>
+                <input type="password" name="user-password" id="user-password" placeholder="Password" required>
+            </div>
+            <div class="hr-line">
+                <span class="details">one more step to go</span>
+            </div>
+            <div class="form-element">
+                <button class="register-button" type="submit">Login!</button>
+            </div>
+        </fieldset>
+    </form>
+    <#if message??>
+        <div style="color: red; text-align: center; margin-top: 20px;">
+            <p>
+                ${message}
+            </p>
+        </div>
+
+    </#if>
+</main>
 </body>
 
 </html>
