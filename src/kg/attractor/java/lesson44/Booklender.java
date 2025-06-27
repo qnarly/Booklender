@@ -9,27 +9,110 @@ import kg.attractor.java.library.LibraryService;
 import kg.attractor.java.server.BasicServer;
 import kg.attractor.java.server.ContentType;
 import kg.attractor.java.server.ResponseCodes;
+import kg.attractor.java.user.User;
+import kg.attractor.java.user.UserService;
+import kg.attractor.java.utils.Utils;
 
 import java.io.*;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class Lesson44Server extends BasicServer {
+public class Booklender extends BasicServer {
     private final static Configuration freemarker = initFreeMarker();
 
     private final LibraryService libraryService = new LibraryService();
 
+    private final UserService userService = new UserService();
 
-    public Lesson44Server(String host, int port) throws IOException {
+
+    public Booklender(String host, int port) throws IOException {
         super(host, port);
         registerGet("/sample", this::freemarkerSampleHandler);
         registerGet("/books", this::booksHandler);
         registerGet("/book", this::bookHandler);
+        registerGet("/login", this::loginGet);
+        registerPost("/login", this::loginPost);
+        registerGet("/register", this::regGet);
+        registerPost("/register", this::regPost);
+        registerGet("/profile", this::profileGet);
     }
+
+    private void profileGet(HttpExchange httpExchange) {
+        User defaultUser = new User("Некий пользователь", "default@example.com", "---");
+
+        Map<String, Object> data = new HashMap<>();
+
+        data.put("user", defaultUser);
+
+        renderTemplate(httpExchange, "profile.ftlh", data);
+    }
+
+    private void regGet(HttpExchange exchange) {
+        Path path = makeFilePath("register.ftlh");
+        renderTemplate(exchange, "register.ftlh", null);
+    }
+
+    private void regPost(HttpExchange exchange) {
+        String raw = getBody(exchange);
+        Map<String, String> parsed = Utils.parseUrlEncoded(raw, "&");
+        String name = parsed.get("nickname");
+        String email = parsed.get("email");
+        String password = parsed.get("user-password");
+
+        boolean userExist = userService.isUserExist(email);
+
+        if (userExist) {
+            System.out.println("Попытка регистрации с существующим email: " + email);
+            Map<String, Object> data = new HashMap<>();
+            data.put("message", "Регистрация не удалась. Пользователь с таким email уже зарегистрирован! Попробуйте еще раз");
+
+            renderTemplate(exchange, "register.ftlh", data);
+
+        } else {
+            User user = new User(name, email, password);
+            userService.addUser(user);
+
+            renderTemplate(exchange, "register_success.ftlh", null);
+        }
+
+    }
+
+    private void loginGet(HttpExchange exchange) {
+        Path path = makeFilePath("login.ftlh");
+        renderTemplate(exchange, "login.ftlh", null);
+    }
+
+    private void loginPost(HttpExchange exchange) {
+        String raw = getBody(exchange);
+        Map<String, String> parsed = Utils.parseUrlEncoded(raw, "&");
+        String email = parsed.get("email");
+        String password = parsed.get("user-password");
+
+
+        Optional<User> userLogin = userService.loginChecker(email);
+
+        if (userLogin.isPresent() && userLogin.get().getPassword().equals(password)) {
+            System.out.println("Успешный вход для пользователя: " + email);
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("user", userLogin.get());
+
+            renderTemplate(exchange, "profile.ftlh", data);
+        } else {
+            System.out.println("Неудачная попытка входа для: " + email);
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("message", "Авторизоваться не удалось, неверный идентификатор или пароль");
+
+            renderTemplate(exchange, "login.ftlh", data);
+        }
+    }
+
 
     private static Configuration initFreeMarker() {
         try {
@@ -135,8 +218,8 @@ public class Lesson44Server extends BasicServer {
     }
 
     private SampleDataModel getSampleDataModel() {
-        // возвращаем экземпляр тестовой модели-данных
-        // которую freemarker будет использовать для наполнения шаблона
+//         возвращаем экземпляр тестовой модели-данных
+//         которую freemarker будет использовать для наполнения шаблона
         return new SampleDataModel();
     }
 }
