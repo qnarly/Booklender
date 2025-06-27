@@ -1,4 +1,4 @@
-package kg.attractor.java.library;
+package kg.attractor.java.user;
 
 public class User {
     private String name;

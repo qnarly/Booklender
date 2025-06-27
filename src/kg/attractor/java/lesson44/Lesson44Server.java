@@ -9,14 +9,14 @@ import kg.attractor.java.library.LibraryService;
 import kg.attractor.java.server.BasicServer;
 import kg.attractor.java.server.ContentType;
 import kg.attractor.java.server.ResponseCodes;
+import kg.attractor.java.user.User;
+import kg.attractor.java.utils.FileUtil;
 import kg.attractor.java.utils.Utils;
 
 import java.io.*;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -44,6 +44,17 @@ public class Lesson44Server extends BasicServer {
     }
 
     private void regPost(HttpExchange exchange) {
+        String raw = getBody(exchange);
+        Map<String, String> parsed = Utils.parseUrlEncoded(raw, "&");
+        String name = parsed.get("nickname");
+        String email = parsed.get("email");
+        String password = parsed.get("user-password");
+        User user = new User(name, email, password);
+
+        FileUtil.writeFile(user);
+
+        redirect303(exchange, "/");
+
     }
 
     private void loginGet(HttpExchange exchange) {
@@ -175,8 +186,8 @@ public class Lesson44Server extends BasicServer {
     }
 
     private SampleDataModel getSampleDataModel() {
-        // возвращаем экземпляр тестовой модели-данных
-        // которую freemarker будет использовать для наполнения шаблона
+//         возвращаем экземпляр тестовой модели-данных
+//         которую freemarker будет использовать для наполнения шаблона
         return new SampleDataModel();
     }
 }

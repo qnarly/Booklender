@@ -1,15 +1,4 @@
 {
-  "employees": [
-    {
-      "name": "John Doe"
-    },
-    {
-      "name": "Alex Trueman"
-    },
-    {
-      "name": "Steve Cool"
-    }
-  ],
   "books": [
     {
       "id": 1,

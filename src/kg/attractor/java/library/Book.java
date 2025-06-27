@@ -1,5 +1,7 @@
 package kg.attractor.java.library;
 
+import kg.attractor.java.user.User;
+
 public class Book {
     private int id;
     private String title;
