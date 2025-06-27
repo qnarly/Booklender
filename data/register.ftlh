@@ -41,8 +41,10 @@
                 ${message}
             </p>
         </div>
-
     </#if>
+    <div style="text-align: center; margin-top: 20px;">
+        <p>Уже есть аккаунт? <a href="/login">Войти</a></p>
+    </div>
 </main>
 </body>
 

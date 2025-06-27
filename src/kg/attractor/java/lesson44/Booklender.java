@@ -23,13 +23,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class Lesson44Server extends BasicServer {
+public class Booklender extends BasicServer {
     private final static Configuration freemarker = initFreeMarker();
 
     private final LibraryService libraryService = new LibraryService();
 
 
-    public Lesson44Server(String host, int port) throws IOException {
+    public Booklender(String host, int port) throws IOException {
         super(host, port);
         registerGet("/sample", this::freemarkerSampleHandler);
         registerGet("/books", this::booksHandler);
@@ -38,6 +38,17 @@ public class Lesson44Server extends BasicServer {
         registerPost("/login", this::loginPost);
         registerGet("/register", this::regGet);
         registerPost("/register", this::regPost);
+        registerGet("/profile", this::profileGet);
+    }
+
+    private void profileGet(HttpExchange httpExchange) {
+        User defaultUser = new User("Некий пользователь", "default@example.com", "---");
+
+        Map<String, Object> data = new HashMap<>();
+
+        data.put("user", defaultUser);
+
+        renderTemplate(httpExchange, "profile.ftlh", data);
     }
 
     private void regGet(HttpExchange exchange) {
@@ -57,7 +68,7 @@ public class Lesson44Server extends BasicServer {
         if (userExist) {
             System.out.println("Попытка регистрации с существующим email: " + email);
             Map<String, Object> data = new HashMap<>();
-            data.put("message", "Пользователь с таким email уже зарегистрирован!");
+            data.put("message", "Регистрация не удалась. Пользователь с таким email уже зарегистрирован! Попробуйте еще раз");
 
             renderTemplate(exchange, "register.ftlh", data);
 
@@ -65,7 +76,7 @@ public class Lesson44Server extends BasicServer {
             User user = new User(name, email, password);
             FileUtil.writeFile(user);
 
-            redirect303(exchange, "/");
+            renderTemplate(exchange, "register_success.ftlh", null);
         }
 
     }

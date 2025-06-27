@@ -32,6 +32,11 @@
             </div>
         </#list>
     </div>
+    <br>
+    <div style="text-align: center;">
+        <a href="/profile">Мой профиль</a> |
+        <a href="/">На главную</a>
+    </div>
 </div>
 </body>
 </html>
