@@ -31,6 +31,8 @@ public class Booklender extends BasicServer {
 
     private final UserService userService = new UserService();
 
+    private final Map<String, User> sessions = new HashMap<>();
+
 
     public Booklender(String host, int port) throws IOException {
         super(host, port);
@@ -69,13 +71,6 @@ public class Booklender extends BasicServer {
     }
 
     private void profileGet(HttpExchange httpExchange) {
-        User defaultUser = new User("Некий пользователь", "default@example.com", "---");
-
-        Map<String, Object> data = new HashMap<>();
-
-        data.put("user", defaultUser);
-
-        renderTemplate(httpExchange, "profile.ftlh", data);
     }
 
     private void regGet(HttpExchange exchange) {
@@ -124,6 +119,32 @@ public class Booklender extends BasicServer {
 
         if (userLogin.isPresent() && userLogin.get().getPassword().equals(password)) {
             System.out.println("Успешный вход для пользователя: " + email);
+            User user = userLogin.get();
+
+            String sessionId = UUID.randomUUID().toString();
+
+            sessions.put(sessionId, user);
+            System.out.println("Создана сессия: " + sessionId + " для " + user.getName());
+
+            Cookie sessionCookie = new Cookie("sessionId", sessionId);
+            sessionCookie.setMaxAge(600);
+            sessionCookie.setHttpOnly(true);
+
+            setCookie(exchange, sessionCookie);
+
+            redirect303(exchange, "/profile");
+
+        } else {
+            System.out.println("Неудачная попытка входа для: " + email);
+            Map<String, Object> data = new HashMap<>();
+            data.put("message", "Авторизоваться не удалось, неверный идентификатор или пароль");
+            renderTemplate(exchange, "login.ftlh", data);
+        }
+
+       /* Optional<User> userLogin = userService.loginChecker(email);
+
+        if (userLogin.isPresent() && userLogin.get().getPassword().equals(password)) {
+            System.out.println("Успешный вход для пользователя: " + email);
 
             Map<String, Object> data = new HashMap<>();
             data.put("user", userLogin.get());
@@ -137,6 +158,8 @@ public class Booklender extends BasicServer {
 
             renderTemplate(exchange, "login.ftlh", data);
         }
+
+        */
     }
 
 
