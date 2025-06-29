@@ -8,6 +8,7 @@ import freemarker.template.TemplateExceptionHandler;
 import kg.attractor.java.library.LibraryService;
 import kg.attractor.java.server.BasicServer;
 import kg.attractor.java.server.ContentType;
+import kg.attractor.java.server.Cookie;
 import kg.attractor.java.server.ResponseCodes;
 import kg.attractor.java.user.User;
 import kg.attractor.java.user.UserService;
@@ -20,6 +21,7 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class Booklender extends BasicServer {
@@ -40,6 +42,30 @@ public class Booklender extends BasicServer {
         registerGet("/register", this::regGet);
         registerPost("/register", this::regPost);
         registerGet("/profile", this::profileGet);
+        registerGet("/cookie", this::cookieHandler);
+    }
+
+    private void cookieHandler(HttpExchange exchange) {
+        Map<String, Object> data = new HashMap<>();
+
+        String name = "times";
+        String cookiesReceived = getCookies(exchange);
+        Map<String, String> cookies = Cookie.parse(cookiesReceived);
+
+        String cookieValue = cookies.getOrDefault(name, "0");
+        int times = Integer.parseInt(cookieValue) + 1;
+
+        Cookie responseCookie = new Cookie(name, times);
+
+        setCookie(exchange, responseCookie);
+
+        Cookie cookieId = new Cookie("uuid", UUID.randomUUID().toString());
+        setCookie(exchange, cookieId);
+
+        data.put(name, times);
+        data.put("cookies", cookies);
+
+        renderTemplate(exchange, "cookie.ftlh", data);
     }
 
     private void profileGet(HttpExchange httpExchange) {
