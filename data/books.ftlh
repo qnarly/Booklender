@@ -42,7 +42,7 @@
                                 <a href="/return?id=${book.id}">Вернуть</a>
                             </#if>
                         <#else>
-                            <a href="/checkout?id=${book.id}">Арендовать</a>
+                            <a style="text-decoration: none" href="/checkout?id=${book.id}">Арендовать</a>
                         </#if>
                     </div>
                 </#if>

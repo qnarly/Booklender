@@ -44,12 +44,28 @@
                 <p><strong>Имя:</strong> ${user.name}</p>
                 <p><strong>Email:</strong> ${user.email}</p>
             </div>
+            <div class="books-list">
+                <h2>Ваши книги</h2>
+                <#if books?? && books?has_content>
+                    <ul style="padding: 0 0 0 15px;">
+                        <#list books as book>
+                            <li style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                                <span>${book.title} (${book.author})</span>
+                                <a href="/return?id=${book.id}"
+                                   style="padding: 5px 10px; background-color: #dc3545; color: white; text-decoration: none; border-radius: 4px;">Вернуть</a>
+                            </li>
+                        </#list>
+                    </ul>
+                <#else>
+                    <p>У вас нет книг</p>
+                </#if>
+
+            </div>
         </div>
     <#else>
         <h1>Пользователь не найден</h1>
         <p>Не удалось загрузить информацию о профиле.</p>
     </#if>
-
     <br>
     <div style="text-align: center;">
         <a href="/books">Перейти к списку книг</a> |

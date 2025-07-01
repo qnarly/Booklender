@@ -42,6 +42,7 @@
             <a href="/login">Войти</a>
             <a href="/register">Регистрация</a>
             <a href="/books">Список книг</a>
+            <a href="/profile">Профиль</a>
         </div>
     </div>
 </main>

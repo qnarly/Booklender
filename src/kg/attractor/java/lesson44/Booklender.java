@@ -31,9 +31,9 @@ public class Booklender extends BasicServer {
 
     public Booklender(String host, int port) throws IOException {
         super(host, port);
-        registerGet("/", this::indexHandler);
+        registerGet("/", checkAuth(this::indexHandler));
 
-        registerGet("/books", this::booksHandler);
+        registerGet("/books", checkAuth(this::booksHandler));
         registerGet("/book", this::bookHandler);
 
         registerGet("/login", this::loginGet);
@@ -42,10 +42,18 @@ public class Booklender extends BasicServer {
         registerGet("/register", this::regGet);
         registerPost("/register", this::regPost);
 
-        registerGet("/profile", this::profileGet);
+        registerGet("/profile", checkAuth(this::profileGet));
 
-        registerGet("/checkout", this::checkoutHandler);
+        registerGet("/checkout", checkAuth(this::checkoutHandler));
         registerGet("/return", this::returnHandler);
+    }
+
+    private RouteHandler checkAuth(RouteHandlerAuth handler) {
+        return exchange -> {
+            Optional<User> userOpt = getCurrentUser(exchange);
+
+            handler.handle(exchange, userOpt);
+        };
     }
 
     private void returnHandler(HttpExchange httpExchange) {
@@ -59,13 +67,11 @@ public class Booklender extends BasicServer {
     }
 
 
-    private void checkoutHandler(HttpExchange httpExchange) {
-        Optional<User> userOpt = getCurrentUser(httpExchange);
+    private void checkoutHandler(HttpExchange httpExchange, Optional<User> userOpt) {
         if (userOpt.isEmpty()) {
             redirect303(httpExchange, "/login");
             return;
         }
-
         User currentUser = userOpt.get();
 
         List<Book> userBooks = libraryService.getBooksTakenByUser(currentUser);
@@ -73,7 +79,6 @@ public class Booklender extends BasicServer {
             redirect303(httpExchange, "/books?error=limit");
             return;
         }
-
         String query = httpExchange.getRequestURI().getQuery();
         Map<String, String> params = queryToMap(query);
         int bookId = Integer.parseInt(params.get("id"));
@@ -81,36 +86,24 @@ public class Booklender extends BasicServer {
         libraryService.checkoutBook(bookId, currentUser);
 
         redirect303(httpExchange, "/books");
-
     }
 
-    private void indexHandler(HttpExchange exchange) {
+    private void indexHandler(HttpExchange exchange, Optional<User> userOpt) {
         Map<String, Object> data = new HashMap<>();
-
-        String cookieString = getCookies(exchange);
-        Map<String, String> cookies = Cookie.parse(cookieString);
-        String sessionId = cookies.get("sessionId");
-
-        if (sessionId != null && sessions.containsKey(sessionId)) {
-            data.put("user", sessions.get(sessionId));
-        }
-
+        userOpt.ifPresent(user -> data.put("user", user));
         renderTemplate(exchange, "index.ftlh", data);
     }
 
-    private void profileGet(HttpExchange httpExchange) {
-        String cookieString = getCookies(httpExchange);
-        Map<String, String> cookies = Cookie.parse(cookieString);
-        String sessionId = cookies.get("sessionId");
-
-        User currentUser = null;
-
-        if (sessionId != null && sessions.containsKey(sessionId)) {
-            currentUser = sessions.get(sessionId);
-        }
-
+    private void profileGet(HttpExchange httpExchange, Optional<User> userOpt) {
         Map<String, Object> data = new HashMap<>();
+        User currentUser = userOpt.orElse(null);
         data.put("user", currentUser);
+
+        if (currentUser != null) {
+            List<Book> userBooks = libraryService.getBooksTakenByUser(currentUser);
+
+            data.put("books", userBooks);
+        }
 
         renderTemplate(httpExchange, "profile.ftlh", data);
     }
@@ -186,42 +179,10 @@ public class Booklender extends BasicServer {
 
     }
 
-
-    private static Configuration initFreeMarker() {
-        try {
-            Configuration cfg = new Configuration(Configuration.VERSION_2_3_29);
-            // путь к каталогу в котором у нас хранятся шаблоны
-            // это может быть совершенно другой путь, чем тот, откуда сервер берёт файлы
-            // которые отправляет пользователю
-            cfg.setDirectoryForTemplateLoading(new File("data"));
-
-            // прочие стандартные настройки о них читать тут
-            // https://freemarker.apache.org/docs/pgui_quickstart_createconfiguration.html
-            cfg.setDefaultEncoding("UTF-8");
-            cfg.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
-            cfg.setLogTemplateExceptions(false);
-            cfg.setWrapUncheckedExceptions(true);
-            cfg.setFallbackOnNullLoopVariable(false);
-            return cfg;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void booksHandler(HttpExchange httpExchange) {
-        var books = libraryService.getBooks();
-
+    private void booksHandler(HttpExchange httpExchange, Optional<User> userOpt) {
         Map<String, Object> data = new HashMap<>();
-        data.put("books", books);
-
-        String cookieString = getCookies(httpExchange);
-        Map<String, String> cookies = Cookie.parse(cookieString);
-        String sessionId = cookies.get("sessionId");
-
-        if (sessionId != null && sessions.containsKey(sessionId)) {
-            data.put("user", sessions.get(sessionId));
-        }
-
+        data.put("books", libraryService.getBooks());
+        userOpt.ifPresent(user -> data.put("user", user));
         renderTemplate(httpExchange, "books.ftlh", data);
     }
 
@@ -307,6 +268,27 @@ public class Booklender extends BasicServer {
             }
         } catch (IOException | TemplateException e) {
             e.printStackTrace();
+        }
+    }
+
+    private static Configuration initFreeMarker() {
+        try {
+            Configuration cfg = new Configuration(Configuration.VERSION_2_3_29);
+            // путь к каталогу в котором у нас хранятся шаблоны
+            // это может быть совершенно другой путь, чем тот, откуда сервер берёт файлы
+            // которые отправляет пользователю
+            cfg.setDirectoryForTemplateLoading(new File("data"));
+
+            // прочие стандартные настройки о них читать тут
+            // https://freemarker.apache.org/docs/pgui_quickstart_createconfiguration.html
+            cfg.setDefaultEncoding("UTF-8");
+            cfg.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
+            cfg.setLogTemplateExceptions(false);
+            cfg.setWrapUncheckedExceptions(true);
+            cfg.setFallbackOnNullLoopVariable(false);
+            return cfg;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
