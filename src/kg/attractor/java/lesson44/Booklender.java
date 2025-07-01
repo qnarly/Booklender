@@ -5,10 +5,9 @@ import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
 import freemarker.template.TemplateExceptionHandler;
+import kg.attractor.java.library.Book;
 import kg.attractor.java.library.LibraryService;
-import kg.attractor.java.server.BasicServer;
-import kg.attractor.java.server.ContentType;
-import kg.attractor.java.server.ResponseCodes;
+import kg.attractor.java.server.*;
 import kg.attractor.java.user.User;
 import kg.attractor.java.user.UserService;
 import kg.attractor.java.utils.Utils;
@@ -17,9 +16,7 @@ import java.io.*;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Booklender extends BasicServer {
@@ -29,28 +26,107 @@ public class Booklender extends BasicServer {
 
     private final UserService userService = new UserService();
 
+    private final Map<String, User> sessions = new HashMap<>();
+
 
     public Booklender(String host, int port) throws IOException {
         super(host, port);
-        registerGet("/sample", this::freemarkerSampleHandler);
-        registerGet("/books", this::booksHandler);
+        registerGet("/", checkAuth(this::indexHandler));
+
+        registerGet("/books", checkAuth(this::booksHandler));
         registerGet("/book", this::bookHandler);
+
         registerGet("/login", this::loginGet);
         registerPost("/login", this::loginPost);
+
         registerGet("/register", this::regGet);
         registerPost("/register", this::regPost);
-        registerGet("/profile", this::profileGet);
+
+        registerGet("/profile", checkAuth(this::profileGet));
+
+        registerGet("/checkout", checkAuth(this::checkoutHandler));
+        registerGet("/return", this::returnHandler);
+
+        registerGet("/logout", this::logoutHandler);
     }
 
-    private void profileGet(HttpExchange httpExchange) {
-        User defaultUser = new User("Некий пользователь", "default@example.com", "---");
+    private void logoutHandler(HttpExchange httpExchange) {
+        String cookieString = getCookies(httpExchange);
+        Map<String, String> cookies = Cookie.parse(cookieString);
+        String sessionId = cookies.get("sessionId");
 
+        if (sessionId != null) {
+            sessions.remove(sessionId);
+        }
+
+        Cookie expiredCookie = new Cookie("sessionId", "");
+        expiredCookie.setMaxAge(0);
+        expiredCookie.setHttpOnly(true);
+        setCookie(httpExchange, expiredCookie);
+
+        redirect303(httpExchange, "/login");
+    }
+
+    private RouteHandler checkAuth(RouteHandlerAuth handler) {
+        return exchange -> {
+            Optional<User> userOpt = getCurrentUser(exchange);
+
+            handler.handle(exchange, userOpt);
+        };
+    }
+
+    private void returnHandler(HttpExchange httpExchange) {
+        String query = httpExchange.getRequestURI().getQuery();
+        Map<String, String> params = queryToMap(query);
+        int bookId = Integer.parseInt(params.get("id"));
+
+        libraryService.returnBook(bookId);
+
+        redirect303(httpExchange, "/books");
+    }
+
+
+    private void checkoutHandler(HttpExchange httpExchange, Optional<User> userOpt) {
+        if (userOpt.isEmpty()) {
+            redirect303(httpExchange, "/login");
+            return;
+        }
+        User currentUser = userOpt.get();
+
+        List<Book> userBooks = libraryService.getBooksTakenByUser(currentUser);
+        if (userBooks.size() >= 2) {
+            redirect303(httpExchange, "/books?error=limit");
+            return;
+        }
+        String query = httpExchange.getRequestURI().getQuery();
+        Map<String, String> params = queryToMap(query);
+        int bookId = Integer.parseInt(params.get("id"));
+
+        libraryService.checkoutBook(bookId, currentUser);
+
+        redirect303(httpExchange, "/books");
+    }
+
+    private void indexHandler(HttpExchange exchange, Optional<User> userOpt) {
         Map<String, Object> data = new HashMap<>();
+        userOpt.ifPresent(user -> data.put("user", user));
+        renderTemplate(exchange, "index.ftlh", data);
+    }
 
-        data.put("user", defaultUser);
+    private void profileGet(HttpExchange httpExchange, Optional<User> userOpt) {
+        Map<String, Object> data = new HashMap<>();
+        User currentUser = userOpt.orElse(null);
+        data.put("user", currentUser);
+
+        if (currentUser != null) {
+            List<Book> userBooks = libraryService.getBooksTakenByUser(currentUser);
+
+            data.put("books", userBooks);
+        }
 
         renderTemplate(httpExchange, "profile.ftlh", data);
     }
+
 
     private void regGet(HttpExchange exchange) {
         Path path = makeFilePath("register.ftlh");
@@ -98,49 +174,34 @@ public class Booklender extends BasicServer {
 
         if (userLogin.isPresent() && userLogin.get().getPassword().equals(password)) {
             System.out.println("Успешный вход для пользователя: " + email);
+            User user = userLogin.get();
 
-            Map<String, Object> data = new HashMap<>();
-            data.put("user", userLogin.get());
+            String sessionId = UUID.randomUUID().toString();
 
-            renderTemplate(exchange, "profile.ftlh", data);
+            sessions.put(sessionId, user);
+            System.out.println("Создана сессия: " + sessionId + " для " + user.getName());
+
+            Cookie sessionCookie = new Cookie("sessionId", sessionId);
+            sessionCookie.setMaxAge(600);
+            sessionCookie.setHttpOnly(true);
+
+            setCookie(exchange, sessionCookie);
+
+            redirect303(exchange, "/profile");
+
         } else {
             System.out.println("Неудачная попытка входа для: " + email);
-
             Map<String, Object> data = new HashMap<>();
             data.put("message", "Авторизоваться не удалось, неверный идентификатор или пароль");
-
             renderTemplate(exchange, "login.ftlh", data);
         }
+
     }
 
-
-    private static Configuration initFreeMarker() {
-        try {
-            Configuration cfg = new Configuration(Configuration.VERSION_2_3_29);
-            // путь к каталогу в котором у нас хранятся шаблоны
-            // это может быть совершенно другой путь, чем тот, откуда сервер берёт файлы
-            // которые отправляет пользователю
-            cfg.setDirectoryForTemplateLoading(new File("data"));
-
-            // прочие стандартные настройки о них читать тут
-            // https://freemarker.apache.org/docs/pgui_quickstart_createconfiguration.html
-            cfg.setDefaultEncoding("UTF-8");
-            cfg.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
-            cfg.setLogTemplateExceptions(false);
-            cfg.setWrapUncheckedExceptions(true);
-            cfg.setFallbackOnNullLoopVariable(false);
-            return cfg;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void booksHandler(HttpExchange httpExchange) {
-        var books = libraryService.getBooks();
-
+    private void booksHandler(HttpExchange httpExchange, Optional<User> userOpt) {
         Map<String, Object> data = new HashMap<>();
-        data.put("books", books);
-
+        data.put("books", libraryService.getBooks());
+        userOpt.ifPresent(user -> data.put("user", user));
         renderTemplate(httpExchange, "books.ftlh", data);
     }
 
@@ -167,6 +228,18 @@ public class Booklender extends BasicServer {
         data.put("book", bookOpt.orElse(null));
 
         renderTemplate(exchange, "book.ftlh", data);
+    }
+
+    private Optional<User> getCurrentUser(HttpExchange httpExchange) {
+        String cookieString = getCookies(httpExchange);
+        Map<String, String> cookies = Cookie.parse(cookieString);
+        String sessionId = cookies.get("sessionId");
+
+        if (sessionId != null && sessions.containsKey(sessionId)) {
+            return Optional.of(sessions.get(sessionId));
+        }
+
+        return Optional.empty();
     }
 
     public static Map<String, String> queryToMap(String query) {
@@ -214,6 +287,27 @@ public class Booklender extends BasicServer {
             }
         } catch (IOException | TemplateException e) {
             e.printStackTrace();
+        }
+    }
+
+    private static Configuration initFreeMarker() {
+        try {
+            Configuration cfg = new Configuration(Configuration.VERSION_2_3_29);
+            // путь к каталогу в котором у нас хранятся шаблоны
+            // это может быть совершенно другой путь, чем тот, откуда сервер берёт файлы
+            // которые отправляет пользователю
+            cfg.setDirectoryForTemplateLoading(new File("data"));
+
+            // прочие стандартные настройки о них читать тут
+            // https://freemarker.apache.org/docs/pgui_quickstart_createconfiguration.html
+            cfg.setDefaultEncoding("UTF-8");
+            cfg.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
+            cfg.setLogTemplateExceptions(false);
+            cfg.setWrapUncheckedExceptions(true);
+            cfg.setFallbackOnNullLoopVariable(false);
+            return cfg;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 

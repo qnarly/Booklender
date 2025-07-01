@@ -7,6 +7,9 @@
 </head>
 <body>
 <div class="container">
+    <#if user??>
+        <p style="text-align: right;">Вы вошли как: <strong>${user.name}</strong></p>
+    </#if>
     <h1>Наша библиотека</h1>
     <div class="table flex flex-col">
         <div class="header flex">
@@ -14,6 +17,9 @@
             <div class="column">Название</div>
             <div class="column">Автор</div>
             <div class="column">Статус</div>
+            <#if user??>
+                <div class="column">Действие</div>
+            </#if>
         </div>
         <#list books as book>
             <div class="row ${book?item_parity} flex">
@@ -29,6 +35,17 @@
                         <span style="color: green;">В наличии</span>
                     </#if>
                 </div>
+                <#if user??>
+                    <div class="column">
+                        <#if book.isTaken??>
+                            <#if book.isTaken.email == user.email>
+                                <a href="/return?id=${book.id}">Вернуть</a>
+                            </#if>
+                        <#else>
+                            <a style="text-decoration: none" href="/checkout?id=${book.id}">Арендовать</a>
+                        </#if>
+                    </div>
+                </#if>
             </div>
         </#list>
     </div>
