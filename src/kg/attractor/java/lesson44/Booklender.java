@@ -5,11 +5,9 @@ import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
 import freemarker.template.TemplateExceptionHandler;
+import kg.attractor.java.library.Book;
 import kg.attractor.java.library.LibraryService;
-import kg.attractor.java.server.BasicServer;
-import kg.attractor.java.server.ContentType;
-import kg.attractor.java.server.Cookie;
-import kg.attractor.java.server.ResponseCodes;
+import kg.attractor.java.server.*;
 import kg.attractor.java.user.User;
 import kg.attractor.java.user.UserService;
 import kg.attractor.java.utils.Utils;
@@ -18,10 +16,7 @@ import java.io.*;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Booklender extends BasicServer {
@@ -36,42 +31,79 @@ public class Booklender extends BasicServer {
 
     public Booklender(String host, int port) throws IOException {
         super(host, port);
-        registerGet("/sample", this::freemarkerSampleHandler);
+        registerGet("/", this::indexHandler);
+
         registerGet("/books", this::booksHandler);
         registerGet("/book", this::bookHandler);
+
         registerGet("/login", this::loginGet);
         registerPost("/login", this::loginPost);
+
         registerGet("/register", this::regGet);
         registerPost("/register", this::regPost);
+
         registerGet("/profile", this::profileGet);
-        registerGet("/cookie", this::cookieHandler);
+
+        registerGet("/checkout", this::checkoutHandler);
     }
 
-    private void cookieHandler(HttpExchange exchange) {
+
+    private void checkoutHandler(HttpExchange httpExchange) {
+            Optional<User> userOpt = getCurrentUser(httpExchange);
+            if (userOpt.isEmpty()) {
+                redirect303(httpExchange, "/login");
+                return;
+            }
+
+            User currentUser =  userOpt.get();
+
+        List<Book>  userBooks = libraryService.getBooksTakenByUser(currentUser);
+        if (userBooks.size() >= 2) {
+            redirect303(httpExchange, "/books?error=limit");
+            return;
+        }
+
+        String query = httpExchange.getRequestURI().getQuery();
+        Map<String, String> params = queryToMap(query);
+        int bookId = Integer.parseInt(params.get("id"));
+
+        libraryService.checkoutBook(bookId, currentUser);
+
+        redirect303(httpExchange, "/books");
+
+    }
+
+    private void indexHandler(HttpExchange exchange) {
         Map<String, Object> data = new HashMap<>();
 
-        String name = "times";
-        String cookiesReceived = getCookies(exchange);
-        Map<String, String> cookies = Cookie.parse(cookiesReceived);
+        String cookieString = getCookies(exchange);
+        Map<String, String> cookies = Cookie.parse(cookieString);
+        String sessionId = cookies.get("sessionId");
 
-        String cookieValue = cookies.getOrDefault(name, "0");
-        int times = Integer.parseInt(cookieValue) + 1;
+        if (sessionId != null && sessions.containsKey(sessionId)) {
+            data.put("user", sessions.get(sessionId));
+        }
 
-        Cookie responseCookie = new Cookie(name, times);
-
-        setCookie(exchange, responseCookie);
-
-        Cookie cookieId = new Cookie("uuid", UUID.randomUUID().toString());
-        setCookie(exchange, cookieId);
-
-        data.put(name, times);
-        data.put("cookies", cookies);
-
-        renderTemplate(exchange, "cookie.ftlh", data);
+        renderTemplate(exchange, "index.ftlh", data);
     }
 
     private void profileGet(HttpExchange httpExchange) {
+        String cookieString = getCookies(httpExchange);
+        Map<String, String> cookies = Cookie.parse(cookieString);
+        String sessionId = cookies.get("sessionId");
+
+        User currentUser = null;
+
+        if (sessionId != null && sessions.containsKey(sessionId)) {
+            currentUser = sessions.get(sessionId);
+        }
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("user", currentUser);
+
+        renderTemplate(httpExchange, "profile.ftlh", data);
     }
+
 
     private void regGet(HttpExchange exchange) {
         Path path = makeFilePath("register.ftlh");
@@ -141,25 +173,6 @@ public class Booklender extends BasicServer {
             renderTemplate(exchange, "login.ftlh", data);
         }
 
-       /* Optional<User> userLogin = userService.loginChecker(email);
-
-        if (userLogin.isPresent() && userLogin.get().getPassword().equals(password)) {
-            System.out.println("Успешный вход для пользователя: " + email);
-
-            Map<String, Object> data = new HashMap<>();
-            data.put("user", userLogin.get());
-
-            renderTemplate(exchange, "profile.ftlh", data);
-        } else {
-            System.out.println("Неудачная попытка входа для: " + email);
-
-            Map<String, Object> data = new HashMap<>();
-            data.put("message", "Авторизоваться не удалось, неверный идентификатор или пароль");
-
-            renderTemplate(exchange, "login.ftlh", data);
-        }
-
-        */
     }
 
 
@@ -190,6 +203,14 @@ public class Booklender extends BasicServer {
         Map<String, Object> data = new HashMap<>();
         data.put("books", books);
 
+        String cookieString = getCookies(httpExchange);
+        Map<String, String> cookies = Cookie.parse(cookieString);
+        String sessionId = cookies.get("sessionId");
+
+        if (sessionId != null && sessions.containsKey(sessionId)) {
+            data.put("user", sessions.get(sessionId));
+        }
+
         renderTemplate(httpExchange, "books.ftlh", data);
     }
 
@@ -216,6 +237,18 @@ public class Booklender extends BasicServer {
         data.put("book", bookOpt.orElse(null));
 
         renderTemplate(exchange, "book.ftlh", data);
+    }
+
+    private Optional<User> getCurrentUser(HttpExchange httpExchange) {
+        String cookieString = getCookies(httpExchange);
+        Map<String, String> cookies = Cookie.parse(cookieString);
+        String sessionId = cookies.get("sessionId");
+
+        if (sessionId != null && sessions.containsKey(sessionId)) {
+            return Optional.of(sessions.get(sessionId));
+        }
+
+        return Optional.empty();
     }
 
     public static Map<String, String> queryToMap(String query) {
