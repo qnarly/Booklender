@@ -45,19 +45,30 @@ public class Booklender extends BasicServer {
         registerGet("/profile", this::profileGet);
 
         registerGet("/checkout", this::checkoutHandler);
+        registerGet("/return", this::returnHandler);
+    }
+
+    private void returnHandler(HttpExchange httpExchange) {
+        String query = httpExchange.getRequestURI().getQuery();
+        Map<String, String> params = queryToMap(query);
+        int bookId = Integer.parseInt(params.get("id"));
+
+        libraryService.returnBook(bookId);
+
+        redirect303(httpExchange, "/books");
     }
 
 
     private void checkoutHandler(HttpExchange httpExchange) {
-            Optional<User> userOpt = getCurrentUser(httpExchange);
-            if (userOpt.isEmpty()) {
-                redirect303(httpExchange, "/login");
-                return;
-            }
+        Optional<User> userOpt = getCurrentUser(httpExchange);
+        if (userOpt.isEmpty()) {
+            redirect303(httpExchange, "/login");
+            return;
+        }
 
-            User currentUser =  userOpt.get();
+        User currentUser = userOpt.get();
 
-        List<Book>  userBooks = libraryService.getBooksTakenByUser(currentUser);
+        List<Book> userBooks = libraryService.getBooksTakenByUser(currentUser);
         if (userBooks.size() >= 2) {
             redirect303(httpExchange, "/books?error=limit");
             return;
