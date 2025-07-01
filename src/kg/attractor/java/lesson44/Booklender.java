@@ -46,6 +46,25 @@ public class Booklender extends BasicServer {
 
         registerGet("/checkout", checkAuth(this::checkoutHandler));
         registerGet("/return", this::returnHandler);
+
+        registerGet("/logout", this::logoutHandler);
+    }
+
+    private void logoutHandler(HttpExchange httpExchange) {
+        String cookieString = getCookies(httpExchange);
+        Map<String, String> cookies = Cookie.parse(cookieString);
+        String sessionId = cookies.get("sessionId");
+
+        if (sessionId != null) {
+            sessions.remove(sessionId);
+        }
+
+        Cookie expiredCookie = new Cookie("sessionId", "");
+        expiredCookie.setMaxAge(0);
+        expiredCookie.setHttpOnly(true);
+        setCookie(httpExchange, expiredCookie);
+
+        redirect303(httpExchange, "/login");
     }
 
     private RouteHandler checkAuth(RouteHandlerAuth handler) {

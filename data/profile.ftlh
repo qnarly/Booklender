@@ -43,6 +43,11 @@
             <div class="profile-info">
                 <p><strong>Имя:</strong> ${user.name}</p>
                 <p><strong>Email:</strong> ${user.email}</p>
+                <p style="margin-top: 20px;">
+                    <a href="/logout"
+                       style="padding: 8px 15px; background-color: #b72756; color: white; text-decoration: none; border-radius: 4px;">Выйти
+                        из аккаунта</a>
+                </p>
             </div>
             <div class="books-list">
                 <h2>Ваши книги</h2>

@@ -42,7 +42,10 @@
             <a href="/login">Войти</a>
             <a href="/register">Регистрация</a>
             <a href="/books">Список книг</a>
-            <a href="/profile">Профиль</a>
+            <#if user??>
+                <a href="/profile">Профиль</a>
+                <a href="/logout">Выйти</a>
+            </#if>
         </div>
     </div>
 </main>
