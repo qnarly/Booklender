@@ -1,28 +1,47 @@
-{
-  "books": [
-    {
-      "id": 1,
-      "title": "Война и мир",
-      "author": "Л.Н. Толстой",
-      "checkedOutTo": null
-    },
-    {
-      "id": 2,
-      "title": "Преступление и наказание",
-      "author": "Ф.М. Достоевский",
-      "checkedOutTo": null
-    },
-    {
-      "id": 3,
-      "title": "Мастер и Маргарита",
-      "author": "М.А. Булгаков",
-      "checkedOutTo": 1
-    },
-    {
-      "id": 4,
-      "title": "Мартин Иден",
-      "author": "Джек Лондон",
-      "checkedOutTo": null
+[
+  {
+    "id": 1,
+    "title": "Война и мир",
+    "author": "Л.Н. Толстой"
+  },
+  {
+    "id": 2,
+    "title": "Преступление и наказание",
+    "author": "Ф.М. Достоевский"
+  },
+  {
+    "id": 3,
+    "title": "Мастер и Маргарита",
+    "author": "М.А. Булгаков"
+  },
+  {
+    "id": 4,
+    "title": "Мартин Иден",
+    "author": "Джек Лондон"
+  },
+  {
+    "id": 5,
+    "title": "Лолита",
+    "author": "Владимир Набоков",
+    "isTaken": {
+      "name": "ewrty",
+      "email": "castroffaceit@gmail.com",
+      "password": "123456"
     }
-  ]
-}
+  },
+  {
+    "id": 6,
+    "title": "Бог всегда путешествует инкогнито",
+    "author": "Лоран Гунель",
+    "isTaken": {
+      "name": "ewrty",
+      "email": "castroffaceit@gmail.com",
+      "password": "123456"
+    }
+  },
+  {
+    "id": 7,
+    "title": "Граф Монте-Кристо",
+    "author": "Александр Дюма"
+  }
+]
