@@ -48,6 +48,18 @@ public class Booklender extends BasicServer {
         registerGet("/return", this::returnHandler);
 
         registerGet("/logout", this::logoutHandler);
+
+        registerGet("/query", this::queryHandler);
+    }
+
+
+    private void queryHandler(HttpExchange exchange) {
+        String query = getQueryParams(exchange);
+        Map<String, String> params = Utils.parseUrlEncoded(query, "&");
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("params", params);
+        renderTemplate(exchange, "query.ftlh", data);
     }
 
     private void logoutHandler(HttpExchange httpExchange) {
