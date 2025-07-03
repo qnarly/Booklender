@@ -34,7 +34,7 @@ public class Booklender extends BasicServer {
         registerGet("/", checkAuth(this::indexHandler));
 
         registerGet("/books", checkAuth(this::booksHandler));
-        registerGet("/book", this::bookHandler);
+        registerGet("/book", checkAuth(this::bookHandler));
 
         registerGet("/login", this::loginGet);
         registerPost("/login", this::loginPost);
@@ -217,27 +217,26 @@ public class Booklender extends BasicServer {
         renderTemplate(httpExchange, "books.ftlh", data);
     }
 
-    private void bookHandler(HttpExchange exchange) {
+    private void bookHandler(HttpExchange exchange, Optional<User> userOpt) {
         String query = exchange.getRequestURI().getQuery();
         Map<String, String> params = queryToMap(query);
 
         String idParam = params.get("id");
-
-        java.util.Optional<kg.attractor.java.library.Book> bookOpt;
+        Optional<Book> bookOpt = Optional.empty();
 
         if (idParam != null) {
             try {
                 int bookId = Integer.parseInt(idParam);
                 bookOpt = libraryService.getBookById(bookId);
             } catch (NumberFormatException e) {
-                bookOpt = java.util.Optional.empty();
+                System.out.println("Неккоректный id книги " + idParam);
             }
-        } else {
-            bookOpt = libraryService.getBooks().stream().findFirst();
         }
 
         Map<String, Object> data = new HashMap<>();
         data.put("book", bookOpt.orElse(null));
+
+        userOpt.ifPresent(user -> data.put("user", user));
 
         renderTemplate(exchange, "book.ftlh", data);
     }
