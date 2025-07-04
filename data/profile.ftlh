@@ -64,7 +64,20 @@
                 <#else>
                     <p>У вас нет книг</p>
                 </#if>
-
+            </div>
+            <div class="book-list">
+                <h2>Прочитано в этой сессии</h2>
+                <#if exBooks?? && exBooks?has_content>
+                    <ul style="padding: 0 0 0 15px;">
+                        <#list exBooks as book>
+                            <li style="margin-bottom: 10px;">
+                                <span>${book.title} (${book.author})</span>
+                            </li>
+                        </#list>
+                    </ul>
+                <#else>
+                    <p>Вы еще не читали книг в этой сессии.</p>
+                </#if>
             </div>
         </div>
     <#else>

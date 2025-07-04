@@ -45,7 +45,7 @@ public class Booklender extends BasicServer {
         registerGet("/profile", checkAuth(this::profileGet));
 
         registerGet("/checkout", checkAuth(this::checkoutHandler));
-        registerGet("/return", this::returnHandler);
+        registerGet("/return", checkAuth(this::returnHandler));
 
         registerGet("/logout", this::logoutHandler);
 
@@ -87,12 +87,24 @@ public class Booklender extends BasicServer {
         };
     }
 
-    private void returnHandler(HttpExchange httpExchange) {
+    private void returnHandler(HttpExchange httpExchange, Optional<User> userOpt) {
+        if (userOpt.isEmpty()) {
+            redirect303(httpExchange, "/login");
+            return;
+        }
+        User currentUser = userOpt.get();
+
         String query = httpExchange.getRequestURI().getQuery();
         Map<String, String> params = queryToMap(query);
         int bookId = Integer.parseInt(params.get("id"));
 
-        libraryService.returnBook(bookId);
+        Optional<Book> findReturnBookOpt = libraryService.getBookById(bookId);
+        if (findReturnBookOpt.isPresent()) {
+            Book bookReturn = findReturnBookOpt.get();
+            currentUser.addExBook(bookReturn);
+
+            libraryService.returnBook(bookId);
+        }
 
         redirect303(httpExchange, "/books");
     }
@@ -134,6 +146,8 @@ public class Booklender extends BasicServer {
             List<Book> userBooks = libraryService.getBooksTakenByUser(currentUser);
 
             data.put("books", userBooks);
+
+            data.put("exBooks", currentUser.getExBooks());
         }
 
         renderTemplate(httpExchange, "profile.ftlh", data);
