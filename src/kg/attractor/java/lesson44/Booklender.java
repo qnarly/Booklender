@@ -15,7 +15,6 @@ import kg.attractor.java.utils.Utils;
 import java.io.*;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -34,7 +33,7 @@ public class Booklender extends BasicServer {
         registerGet("/", checkAuth(this::indexHandler));
 
         registerGet("/books", checkAuth(this::booksHandler));
-        registerGet("/book", this::bookHandler);
+        registerGet("/book", checkAuth(this::bookHandler));
 
         registerGet("/login", this::loginGet);
         registerPost("/login", this::loginPost);
@@ -45,7 +44,7 @@ public class Booklender extends BasicServer {
         registerGet("/profile", checkAuth(this::profileGet));
 
         registerGet("/checkout", checkAuth(this::checkoutHandler));
-        registerGet("/return", this::returnHandler);
+        registerGet("/return", checkAuth(this::returnHandler));
 
         registerGet("/logout", this::logoutHandler);
     }
@@ -75,12 +74,24 @@ public class Booklender extends BasicServer {
         };
     }
 
-    private void returnHandler(HttpExchange httpExchange) {
+    private void returnHandler(HttpExchange httpExchange, Optional<User> userOpt) {
+        if (userOpt.isEmpty()) {
+            redirect303(httpExchange, "/login");
+            return;
+        }
+        User currentUser = userOpt.get();
+
         String query = httpExchange.getRequestURI().getQuery();
         Map<String, String> params = queryToMap(query);
         int bookId = Integer.parseInt(params.get("id"));
 
-        libraryService.returnBook(bookId);
+        Optional<Book> findReturnBookOpt = libraryService.getBookById(bookId);
+        if (findReturnBookOpt.isPresent()) {
+            Book bookReturn = findReturnBookOpt.get();
+            currentUser.addExBook(bookReturn);
+
+            libraryService.returnBook(bookId);
+        }
 
         redirect303(httpExchange, "/books");
     }
@@ -122,6 +133,8 @@ public class Booklender extends BasicServer {
             List<Book> userBooks = libraryService.getBooksTakenByUser(currentUser);
 
             data.put("books", userBooks);
+
+            data.put("exBooks", currentUser.getExBooks());
         }
 
         renderTemplate(httpExchange, "profile.ftlh", data);
@@ -129,7 +142,6 @@ public class Booklender extends BasicServer {
 
 
     private void regGet(HttpExchange exchange) {
-        Path path = makeFilePath("register.ftlh");
         renderTemplate(exchange, "register.ftlh", null);
     }
 
@@ -159,7 +171,6 @@ public class Booklender extends BasicServer {
     }
 
     private void loginGet(HttpExchange exchange) {
-        Path path = makeFilePath("login.ftlh");
         renderTemplate(exchange, "login.ftlh", null);
     }
 
@@ -205,27 +216,26 @@ public class Booklender extends BasicServer {
         renderTemplate(httpExchange, "books.ftlh", data);
     }
 
-    private void bookHandler(HttpExchange exchange) {
+    private void bookHandler(HttpExchange exchange, Optional<User> userOpt) {
         String query = exchange.getRequestURI().getQuery();
         Map<String, String> params = queryToMap(query);
 
         String idParam = params.get("id");
-
-        java.util.Optional<kg.attractor.java.library.Book> bookOpt;
+        Optional<Book> bookOpt = Optional.empty();
 
         if (idParam != null) {
             try {
                 int bookId = Integer.parseInt(idParam);
                 bookOpt = libraryService.getBookById(bookId);
             } catch (NumberFormatException e) {
-                bookOpt = java.util.Optional.empty();
+                System.out.println("Неккоректный id книги " + idParam);
             }
-        } else {
-            bookOpt = libraryService.getBooks().stream().findFirst();
         }
 
         Map<String, Object> data = new HashMap<>();
         data.put("book", bookOpt.orElse(null));
+
+        userOpt.ifPresent(user -> data.put("user", user));
 
         renderTemplate(exchange, "book.ftlh", data);
     }
@@ -253,10 +263,6 @@ public class Booklender extends BasicServer {
                         a -> a.length > 1 ? URLDecoder.decode(a[1], StandardCharsets.UTF_8) : "",
                         (v1, v2) -> v1
                 ));
-    }
-
-    private void freemarkerSampleHandler(HttpExchange exchange) {
-        renderTemplate(exchange, "sample.ftlh", getSampleDataModel());
     }
 
     protected void renderTemplate(HttpExchange exchange, String templateFile, Object dataModel) {
@@ -309,11 +315,5 @@ public class Booklender extends BasicServer {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private SampleDataModel getSampleDataModel() {
-//         возвращаем экземпляр тестовой модели-данных
-//         которую freemarker будет использовать для наполнения шаблона
-        return new SampleDataModel();
     }
 }

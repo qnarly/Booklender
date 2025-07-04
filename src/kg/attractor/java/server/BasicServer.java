@@ -15,6 +15,7 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public abstract class BasicServer {
@@ -109,7 +110,12 @@ public abstract class BasicServer {
     }
 
     protected Path makeFilePath(String... s) {
-        return Path.of(dataDir, s);
+        String pathFromUrl = s[0];
+
+        if (pathFromUrl.startsWith("/")) {
+            pathFromUrl = pathFromUrl.substring(1);
+        }
+        return Path.of(dataDir, pathFromUrl);
     }
 
     protected final void sendByteData(HttpExchange exchange, ResponseCodes responseCode,
@@ -173,5 +179,18 @@ public abstract class BasicServer {
 
     protected String getCookies(HttpExchange exchange) {
         return exchange.getRequestHeaders().getOrDefault("Cookie", List.of("")).get(0);
+    }
+
+    protected String getQueryParams(HttpExchange exchange) {
+        String query = exchange.getRequestURI().getQuery();
+        return Objects.nonNull(query) ? query : "";
+    }
+
+    private static String ensureStartsWithSlash(String route) {
+        if (route.startsWith(".")) {
+            return route;
+        }
+
+        return route.startsWith("/") ? route : "/" + route;
     }
 }

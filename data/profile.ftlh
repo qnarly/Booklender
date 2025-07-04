@@ -1,81 +1,50 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>Профиль пользователя</title>
-    <link rel="stylesheet" href="css/freemarker.css">
-    <style>
-        .profile-card {
-            background-color: #f9f9f9;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 24px;
-            max-width: 500px;
-            margin: 40px auto;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
+<#import "layout.ftlh" as layout>
 
-        .profile-card h1 {
-            color: #333;
-            border-bottom: 2px solid #eee;
-            padding-bottom: 10px;
-            margin-top: 0;
-        }
-
-        .profile-info p {
-            font-size: 18px;
-            line-height: 1.6;
-        }
-
-        .profile-info strong {
-            color: #555;
-            min-width: 120px;
-            display: inline-block;
-        }
-    </style>
-</head>
-<body>
-<div class="container">
-
-    <#if user??>
-        <div class="profile-card">
-            <h1>Профиль пользователя</h1>
-            <div class="profile-info">
-                <p><strong>Имя:</strong> ${user.name}</p>
-                <p><strong>Email:</strong> ${user.email}</p>
-                <p style="margin-top: 20px;">
-                    <a href="/logout"
-                       style="padding: 8px 15px; background-color: #b72756; color: white; text-decoration: none; border-radius: 4px;">Выйти
-                        из аккаунта</a>
-                </p>
-            </div>
-            <div class="books-list">
-                <h2>Ваши книги</h2>
-                <#if books?? && books?has_content>
-                    <ul style="padding: 0 0 0 15px;">
-                        <#list books as book>
-                            <li style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
-                                <span>${book.title} (${book.author})</span>
-                                <a href="/return?id=${book.id}"
-                                   style="padding: 5px 10px; background-color: #dc3545; color: white; text-decoration: none; border-radius: 4px;">Вернуть</a>
-                            </li>
-                        </#list>
-                    </ul>
-                <#else>
-                    <p>У вас нет книг</p>
-                </#if>
-
+<@layout.page title="Профиль">
+<#if user??>
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Профиль</h4>
+                </div>
+                <div class="card-body">
+                    <p><strong>Имя:</strong> ${user.name}</p>
+                    <p><strong>Email:</strong> ${user.email}</p>
+                    <a href="/logout" class="btn btn-outline-danger mt-2">Выйти из аккаунта</a>
+                </div>
             </div>
         </div>
-    <#else>
-        <h1>Пользователь не найден</h1>
-        <p>Не удалось загрузить информацию о профиле.</p>
-    </#if>
-    <br>
-    <div style="text-align: center;">
-        <a href="/books">Перейти к списку книг</a> |
-        <a href="/">На главную</a>
+        <div class="col-md-8">
+            <h4>Книги на руках</h4>
+            <#if books?? && books?has_content>
+                <ul class="list-group">
+                    <#list books as book>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>${book.title} (${book.author})</span>
+                            <a href="/return?id=${book.id}&redirect=/profile" class="btn btn-danger btn-sm">Вернуть</a>
+                        </li>
+                    </#list>
+                </ul>
+            <#else>
+                <p class="text-muted">У вас нет книг на руках.</p>
+            </#if>
+
+            <h4 class="mt-4">Прочитано в этой сессии</h4>
+            <#if exBooks?? && exBooks?has_content>
+                <ul class="list-group">
+                    <#list exBooks as book>
+                        <li class="list-group-item">
+                            ${book.title} (${book.author})
+                        </li>
+                    </#list>
+                </ul>
+            <#else>
+                <p class="text-muted">Вы еще не возвращали книг в этой сессии.</p>
+            </#if>
+        </div>
     </div>
-</div>
-</body>
-</html>
+<#else>
+    <div class="alert alert-danger">Не удалось загрузить информацию о профиле.</div>
+</#if>
+</@layout.page>
