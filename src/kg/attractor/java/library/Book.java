@@ -8,7 +8,7 @@ public class Book {
     private String author;
     private User isTaken;
     private String description;
-    private String imgUrl;
+    private String imageUrl;
 
     public Book(int id, String title, String author) {
         this.id = id;
@@ -41,7 +41,7 @@ public class Book {
         return description;
     }
 
-    public String getImgUrl() {
-        return imgUrl;
+    public String getImageUrl() {
+        return imageUrl;
     }
 }

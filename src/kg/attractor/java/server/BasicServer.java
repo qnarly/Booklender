@@ -110,7 +110,12 @@ public abstract class BasicServer {
     }
 
     protected Path makeFilePath(String... s) {
-        return Path.of(dataDir, s);
+        String pathFromUrl = s[0];
+
+        if (pathFromUrl.startsWith("/")) {
+            pathFromUrl = pathFromUrl.substring(1);
+        }
+        return Path.of(dataDir, pathFromUrl);
     }
 
     protected final void sendByteData(HttpExchange exchange, ResponseCodes responseCode,
