@@ -2,6 +2,8 @@ package kg.attractor.java.library;
 
 import kg.attractor.java.user.User;
 
+import java.util.Objects;
+
 public class Book {
     private int id;
     private String title;
@@ -43,5 +45,18 @@ public class Book {
 
     public String getImageUrl() {
         return imageUrl;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Book book = (Book) o;
+        return id == book.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }
