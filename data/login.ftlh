@@ -1,47 +1,38 @@
-<!DOCTYPE html>
-<html lang="en">
+<#import "layout.ftlh" as layout>
 
-<head>
-    <meta charset="UTF-8">
-    <title>Login form</title>
-    <link rel="stylesheet" href="css/forms.css">
-</head>
-
-<body>
-<main>
-    <form action="/login" method="post">
-        <fieldset>
-            <div class="legend">
-                <p>Welcome!</p>
-                <img src="/images/1.jpg" alt="coins" style="display:block; width: 200px; height: 200px;">
+<@layout.page title="Вход">
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h3 class="card-title text-center mb-4">Вход в библиотеку</h3>
+                <form action="/login" method="post">
+                    <fieldset>
+                        <div class="form-floating mb-3">
+                            <input type="email" name="email" id="user-email" class="form-control" placeholder="E-mail"
+                                   required autofocus>
+                            <label for="user-email">Email</label>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input type="password" name="user-password" id="user-password" class="form-control"
+                                   placeholder="Password" required>
+                            <label for="user-password">Пароль</label>
+                        </div>
+                        <div class="d-grid">
+                            <button class="btn btn-primary btn-lg" type="submit">Войти</button>
+                        </div>
+                    </fieldset>
+                </form>
+                <#if message??>
+                    <div class="alert alert-danger text-center mt-3 mb-0">
+                        ${message}
+                    </div>
+                </#if>
             </div>
-            <div class="form-element">
-                <label for="user-email">email</label>
-                <input type="email" name="email" id="user-email" placeholder="E-mail" required autofocus>
+            <div class="card-footer text-center py-3">
+                <div class="small">Еще нет аккаунта? <a href="/register">Зарегистрироваться</a></div>
             </div>
-            <div class="form-element">
-                <label for="user-password">password</label>
-                <input type="password" name="user-password" id="user-password" placeholder="Password" required>
-            </div>
-            <div class="hr-line">
-                <span class="details">one more step to go</span>
-            </div>
-            <div class="form-element">
-                <button class="register-button" type="submit">Login!</button>
-            </div>
-        </fieldset>
-    </form>
-    <#if message??>
-        <div style="color: red; text-align: center; margin-top: 20px;">
-            <p>
-                ${message}
-            </p>
         </div>
-    </#if>
-    <div style="text-align: center; margin-top: 20px;">
-        <p>Еще нет аккаунта? <a href="/register">Зарегистрироваться</a></p>
     </div>
-</main>
-</body>
-
-</html>
+</div>
+</@layout.page>

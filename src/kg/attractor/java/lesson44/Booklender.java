@@ -15,7 +15,6 @@ import kg.attractor.java.utils.Utils;
 import java.io.*;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -48,18 +47,6 @@ public class Booklender extends BasicServer {
         registerGet("/return", checkAuth(this::returnHandler));
 
         registerGet("/logout", this::logoutHandler);
-
-        registerGet("/query", this::queryHandler);
-    }
-
-
-    private void queryHandler(HttpExchange exchange) {
-        String query = getQueryParams(exchange);
-        Map<String, String> params = Utils.parseUrlEncoded(query, "&");
-
-        Map<String, Object> data = new HashMap<>();
-        data.put("params", params);
-        renderTemplate(exchange, "query.ftlh", data);
     }
 
     private void logoutHandler(HttpExchange httpExchange) {
@@ -155,7 +142,6 @@ public class Booklender extends BasicServer {
 
 
     private void regGet(HttpExchange exchange) {
-        Path path = makeFilePath("register.ftlh");
         renderTemplate(exchange, "register.ftlh", null);
     }
 
@@ -185,7 +171,6 @@ public class Booklender extends BasicServer {
     }
 
     private void loginGet(HttpExchange exchange) {
-        Path path = makeFilePath("login.ftlh");
         renderTemplate(exchange, "login.ftlh", null);
     }
 
@@ -280,10 +265,6 @@ public class Booklender extends BasicServer {
                 ));
     }
 
-    private void freemarkerSampleHandler(HttpExchange exchange) {
-        renderTemplate(exchange, "sample.ftlh", getSampleDataModel());
-    }
-
     protected void renderTemplate(HttpExchange exchange, String templateFile, Object dataModel) {
         try {
             // Загружаем шаблон из файла по имени.
@@ -334,11 +315,5 @@ public class Booklender extends BasicServer {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private SampleDataModel getSampleDataModel() {
-//         возвращаем экземпляр тестовой модели-данных
-//         которую freemarker будет использовать для наполнения шаблона
-        return new SampleDataModel();
     }
 }

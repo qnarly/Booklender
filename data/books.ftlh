@@ -1,59 +1,49 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>Список книг</title>
-    <link rel="stylesheet" href="css/freemarker.css">
-</head>
-<body>
-<div class="container">
-    <#if user??>
-        <p style="text-align: right;">Вы вошли как: <strong>${user.name}</strong></p>
-    </#if>
-    <h1>Наша библиотека</h1>
-    <div class="table flex flex-col">
-        <div class="header flex">
-            <div class="column">ID</div>
-            <div class="column">Название</div>
-            <div class="column">Автор</div>
-            <div class="column">Статус</div>
+<#import "layout.ftlh" as layout>
+
+<@layout.page title="Каталог книг">
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Каталог книг</h1>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover align-middle">
+        <thead class="table-dark">
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">Название</th>
+            <th scope="col">Автор</th>
+            <th scope="col">Статус</th>
             <#if user??>
-                <div class="column">Действие</div>
-            </#if>
-        </div>
+                <th scope="col">Действие</th></#if>
+        </tr>
+        </thead>
+        <tbody>
         <#list books as book>
-            <div class="row ${book?item_parity} flex">
-                <div class="column">${book.id}</div>
-                <div class="column">
-                    <a href="/book?id=${book.id}">${book.title}</a>
-                </div>
-                <div class="column">${book.author}</div>
-                <div class="column">
+            <tr>
+                <th scope="row">${book.id}</th>
+                <td><a href="/book?id=${book.id}" class="text-decoration-none">${book.title}</a></td>
+                <td>${book.author}</td>
+                <td>
                     <#if book.isTaken??>
-                        Выдана: ${book.isTaken.name}
+                        <span class="badge bg-secondary">Выдана: ${book.isTaken.name}</span>
                     <#else>
-                        <span style="color: green;">В наличии</span>
+                        <span class="badge bg-success">В наличии</span>
                     </#if>
-                </div>
+                </td>
                 <#if user??>
-                    <div class="column">
+                    <td>
                         <#if book.isTaken??>
                             <#if book.isTaken.email == user.email>
-                                <a href="/return?id=${book.id}">Вернуть</a>
+                                <a href="/return?id=${book.id}" class="btn btn-outline-danger btn-sm">Вернуть</a>
                             </#if>
                         <#else>
-                            <a style="text-decoration: none" href="/checkout?id=${book.id}">Арендовать</a>
+                            <a href="/checkout?id=${book.id}" class="btn btn-outline-primary btn-sm">Взять книгу</a>
                         </#if>
-                    </div>
+                    </td>
                 </#if>
-            </div>
+            </tr>
         </#list>
-    </div>
-    <br>
-    <div style="text-align: center;">
-        <a href="/profile">Мой профиль</a> |
-        <a href="/">На главную</a>
-    </div>
+        </tbody>
+    </table>
 </div>
-</body>
-</html>
+</@layout.page>

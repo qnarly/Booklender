@@ -1,53 +1,58 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>Главная страница</title>
-    <link rel="stylesheet" href="css/forms.css">
-    <style>
-        .container {
-            width: 800px;
-            margin: 0 auto;
-        }
+<#import "layout.ftlh" as layout>
 
-        .nav-links {
-            text-align: center;
-            margin-top: 50px;
-        }
+<@layout.page title="Booklender">
 
-        .nav-links a {
-            display: inline-block;
-            padding: 15px 25px;
-            margin: 10px;
-            font-size: 18px;
-            color: white;
-            background-color: #28a745;
-            text-decoration: none;
-            border-radius: 5px;
-            transition: background-color 0.3s;
-        }
-
-        .nav-links a:hover {
-            background-color: #218838;
-        }
-    </style>
-</head>
-<body>
-<main>
-    <div class="container">
-        <#if user??>
-            <p style="text-align: right;">Вы вошли как: <strong>${user.name}</strong></p>
-        </#if>
-        <div class="nav-links">
-            <a href="/login">Войти</a>
-            <a href="/register">Регистрация</a>
-            <a href="/books">Список книг</a>
-            <#if user??>
-                <a href="/profile">Профиль</a>
-                <a href="/logout">Выйти</a>
-            </#if>
-        </div>
+<div class="p-5 mb-4 bg-light rounded-3">
+    <div class="container-fluid py-5">
+        <h1 class="display-5 fw-bold">Добро пожаловать в нашу библиотеку!</h1>
+        <p class="col-md-8 fs-4">
+            Здесь вы можете просматривать наш каталог книг, брать их почитать и отслеживать свою историю чтения.
+        </p>
+        <a class="btn btn-primary btn-lg" href="/books" role="button">Перейти к списку книг »</a>
     </div>
-</main>
-</body>
-</html>
+</div>
+
+<div class="row">
+    <#if user??>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Ваш профиль</h5>
+                    <p class="card-text">Просматривайте книги, которые сейчас у вас на руках, и историю ваших
+                        прочтений.</p>
+                    <a href="/profile" class="btn btn-secondary">Перейти в профиль</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Выход</h5>
+                    <p class="card-text">Завершить текущую сессию и выйти из аккаунта.</p>
+                    <a href="/logout" class="btn btn-secondary">Выйти</a>
+                </div>
+            </div>
+        </div>
+    <#else>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Вход в аккаунт</h5>
+                    <p class="card-text">Уже есть аккаунт? Войдите, чтобы получить доступ к вашему профилю и книгам.</p>
+                    <a href="/login" class="btn btn-secondary">Войти</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Регистрация</h5>
+                    <p class="card-text">Нет аккаунта? Присоединяйтесь к нам, чтобы получить полный доступ к
+                        возможностям библиотеки.</p>
+                    <a href="/register" class="btn btn-secondary">Зарегистрироваться</a>
+                </div>
+            </div>
+        </div>
+    </#if>
+</div>
+</@layout.page>
